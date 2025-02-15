@@ -240,7 +240,9 @@ posnext.PointOfSale.ItemSelector = class {
 					${get_item_code_header()}
 						<div style="flex: 1">${__('Rate')}</div>
 						<div style="flex: 1">${__('Avail. Qty')}</div>
-						<!--<div class="qty-header">${__('UOM')}</div>-->
+						<div style="flex: 1">${__('Brand')}</div>
+						<div style="flex: 1">${__('Part')}</div>
+						<div style="flex: 1">${__('Vehicle')}</div>
 					</div>
 					<div class="cart-items-section" style="overflow-y:scroll;font-size: 12px"></div>
 				</div>`)
@@ -273,7 +275,6 @@ posnext.PointOfSale.ItemSelector = class {
 					return `<div>${__('Item')}</div>` + html_header
 				}
 
-
             }
 			this.make_cart_items_section();
 
@@ -305,129 +306,84 @@ posnext.PointOfSale.ItemSelector = class {
 		return this.$cart_items_wrapper.find(item_selector);
 	}
 	render_cart_item(item_data) {
-		console.log("Rener cart item")
-		console.log(item_data)
 		const me = this;
 		const currency = me.events.get_frm().currency || me.currency;
 		this.$cart_items_wrapper.append(
 			`<div class="cart-item-wrapper item-wrapper" 
 			data-item-code="${escape(item_data.item_code)}" 
 			data-serial-no="${escape(item_data.serial_no)}"
-			data-batch-no="${escape(item_data.batch_no)}" 
+			data-batch-no="${escape(item_data.batch_no)}"
+			data-uom="${escape(item_data.brand)}" 
 			data-uom="${escape(item_data.uom)}"
 			data-rate="${escape(item_data.price_list_rate || 0)}"
 			data-valuation-rate="${escape(item_data.valuation_rate || item_data.custom_valuation_rate)}"
 			data-item-uoms="${item_data.custom_item_uoms}"
 			data-item-logical-rack="${item_data.custom_logical_rack}"
 			title="${item_data.item_name}"
-			data-row-name="${escape(item_data.item_code)}"></div>
-			<div class="seperator"></div>`
-		)
-		var $item_to_update = this.get_cart_item1(item_data);
-
-		$item_to_update.html(
-			`${get_item_image_html()}
-			${get_item_name()}
-			
-				<div style="overflow-wrap: break-word;overflow:hidden;white-space: normal;font-weight: 700;margin-right: 10px">
-					${item_data.item_name}
+			data-row-name="${escape(item_data.item_code)}">
+				${get_item_image_html()}
+				<div class="item-details" style="display: flex; flex: 2">
+					<div style="overflow-wrap: break-word; overflow: hidden; white-space: normal; font-weight: 700; margin-right: 10px">
+						${item_data.item_name}
+					</div>
+					${get_description_html()}
 				</div>
-				${get_description_html()}
+				${get_item_code()}
+				<div class="item-rate" style="flex: 1; text-align: left">
+					${format_currency(item_data.price_list_rate, currency)}
+				</div>
+				<div class="item-qty" style="flex: 1; text-align: center">
+					${item_data.actual_qty || 0}
+				</div>
+				<div class="item-brand" style="flex: 1; text-align: left">
+					${item_data.brand || ''}
+				</div>
+				<div class="item-part" style="flex: 1; text-align: left">
+					${item_data.part || ''}
+				</div>
+				<div class="item-vehicle" style="flex: 1; text-align: left">
+					${item_data.vehicle || ''}
+				</div>
 			</div>
-			${get_item_code()}
-			${get_rate_discount_html()}`
-		)
+			<div class="seperator"></div>`
+		);
 
-		function get_item_name() {
-			var flex_value = 4
-            if(me.custom_show_item_code && me.custom_show_last_incoming_rate && me.custom_show_oem_part_number){
-				flex_value = 3
-            }
-            // if(me.custom_show_item_code && me.custom_show_last_incoming_rate && !me.custom_show_oem_part_number){
-				// flex_value = 3
-            // }
-            if(!me.custom_show_item_code && !me.custom_show_last_incoming_rate && !me.custom_show_oem_part_number && !me.custom_show_logical_rack){
-				flex_value = 2
-            }
-            // if(me.custom_show_last_incoming_rate && me.custom_show_item_code){
-				// flex_value -= 1
-            // }
-            // if(me.custom_show_oem_part_number){
-				// flex_value -= 1
-            // }
-			return `<div class="" style="flex: ` + flex_value +`;overflow-wrap: break-word;overflow:hidden;white-space: normal">`
-        }
-		set_dynamic_rate_header_width();
-
-		function set_dynamic_rate_header_width() {
-			const rate_cols = Array.from(me.$cart_items_wrapper.find(".item-rate-amount"));
-			me.$cart_header.find(".rate-amount-header").css("width", "");
-			me.$cart_items_wrapper.find(".item-rate-amount").css("width", "");
-			var max_width = rate_cols.reduce((max_width, elm) => {
-				if ($(elm).width() > max_width)
-					max_width = $(elm).width();
-				return max_width;
-			}, 0);
-
-			max_width += 1;
-			if (max_width == 1) max_width = "";
-
-			me.$cart_header.find(".rate-amount-header").css("width", max_width);
-			me.$cart_items_wrapper.find(".item-rate-amount").css("width", max_width);
-		}
 		function get_item_code() {
-			var html_code = ``
-			if(me.custom_show_item_code){
-				var item_code_flex_value =  1
-				html_code += `<div class="item-code-desc" style="flex: ` + item_code_flex_value + `;text-align: left">
-					<div class="item-code" >
-						<b>${item_data.item_code}</b> <br>
-						${item_data.uom}
-					</div>
-				</div>`
+			let html_code = '';
+			if (me.custom_show_item_code) {
+				html_code += `<div style="flex: 1; text-align: left">
+					${item_data.item_code}<br>${item_data.uom}
+				</div>`;
 			}
-			if(me.custom_show_last_incoming_rate){
-				html_code += `<div class="incoming-rate-desc" style="flex: 1;text-align: left">
-					<div class="incoming-rate" >
-						${parseFloat(item_data.valuation_rate).toFixed(2)}
-					</div>
-				</div>`
-            }
-            if(me.custom_show_oem_part_number){
-				html_code += `<div class="incoming-rate-desc" style="flex: 1;text-align: left">
-					<div class="incoming-rate" >
-						${item_data.custom_oem_part_number || ""}
-					</div>
-				</div>`
-            }
-            if(me.custom_show_logical_rack){
-				html_code += `<div class="incoming-rate-desc" style="flex: 1;text-align: left">
-					<div class="incoming-rate" >
-						${item_data.rack || ""}
-					</div>
-				</div>`
-            }
-            return html_code
-        }
-		function get_rate_discount_html() {
-			if (item_data.rate && item_data.amount && item_data.rate !== item_data.amount) {
+			if (me.custom_show_last_incoming_rate) {
+				html_code += `<div style="flex: 1; text-align: left">
+					${parseFloat(item_data.valuation_rate).toFixed(2)}
+				</div>`;
+			}
+			if (me.custom_show_oem_part_number) {
+				html_code += `<div style="flex: 1; text-align: left">
+					${item_data.custom_oem_part_number || ""}
+				</div>`;
+			}
+			if (me.custom_show_logical_rack) {
+				html_code += `<div style="flex: 1; text-align: left">
+					${item_data.rack || ""}
+				</div>`;
+			}
+			return html_code;
+		}
+
+		function get_item_image_html() {
+			const { image, item_name } = item_data;
+			if (!me.hide_images && image) {
 				return `
-					<div class="item-qty-rate" style="flex: 3">
-						<div class="item-rate-amount" style="flex: 1">
-							<div class="item-rate" style="text-align: left">${format_currency(item_data.price_list_rate, currency)}</div>
-						</div>
-						<div class="item-qty" style="flex: 1;display:block;text-align: center"><span> ${item_data.actual_qty || 0}</span></div>
-						
-					</div>`
+					<div class="item-image">
+						<img
+							onerror="cur_pos.cart.handle_broken_image(this)"
+							src="${image}" alt="${frappe.get_abbr(item_name)}"">
+					</div>`;
 			} else {
-				return `
-					<div class="item-qty-rate" style="flex: 3">
-						<div class="item-rate-amount" style="flex: 1">
-							<div class="item-rate" style="text-align: left">${format_currency(item_data.price_list_rate, currency)}</div>
-						</div>
-						<div class="item-qty" style="flex: 1;display:block;text-align: center"><span> ${item_data.actual_qty || 0}</span></div>
-						
-					</div>`
+				return `<div class="item-image item-abbr">${frappe.get_abbr(item_name)}</div>`;
 			}
 		}
 
@@ -444,20 +400,6 @@ posnext.PointOfSale.ItemSelector = class {
 				return `<div class="item-desc">${item_data.description}</div>`;
 			}
 			return ``;
-		}
-
-		function get_item_image_html() {
-			const { image, item_name } = item_data;
-			if (!me.hide_images && image) {
-				return `
-					<div class="item-image">
-						<img
-							onerror="cur_pos.cart.handle_broken_image(this)"
-							src="${image}" alt="${frappe.get_abbr(item_name)}"">
-					</div>`;
-			} else {
-				return `<div class="item-image item-abbr">${frappe.get_abbr(item_name)}</div>`;
-			}
 		}
 	}
 	get_item_html(item) {

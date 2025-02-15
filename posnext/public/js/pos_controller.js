@@ -545,19 +545,21 @@ posnext.PointOfSale.Controller = class {
 	}
 
 	make_sales_invoice_frm() {
-		const doctype = 'Sales Invoice';
+		const doctype = 'Sales Order';
 		return new Promise(resolve => {
 			if (this.frm) {
 				this.frm = this.get_new_frm(this.frm);
 				this.frm.doc.items = [];
-				this.frm.doc.is_pos = 1
+				this.frm.doc.transaction_date = frappe.datetime.get_today(); // Set Sales Order date
+				this.frm.doc.delivery_date = frappe.datetime.add_days(frappe.datetime.get_today(), 1);
 				this.frm.doc.set_warehouse = this.settings.warehouse
 				resolve();
 			} else {
 				frappe.model.with_doctype(doctype, () => {
 					this.frm = this.get_new_frm();
 					this.frm.doc.items = [];
-					this.frm.doc.is_pos = 1
+					this.frm.doc.transaction_date = frappe.datetime.get_today(); // Set Sales Order date
+					this.frm.doc.delivery_date = frappe.datetime.add_days(frappe.datetime.get_today(), 1);
 					this.frm.doc.set_warehouse = this.settings.warehouse
 					resolve();
 				});
@@ -566,7 +568,7 @@ posnext.PointOfSale.Controller = class {
 	}
 
 	get_new_frm(_frm) {
-		const doctype = 'Sales Invoice';
+		const doctype = 'Sales Order';
 		const page = $('<div>');
 		const frm = _frm || new frappe.ui.form.Form(doctype, page, false);
 		const name = frappe.model.make_new_doc_and_get_name(doctype, true);

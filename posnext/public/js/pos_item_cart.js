@@ -73,9 +73,14 @@ posnext.PointOfSale.ItemCart = class {
 				<div class="abs-cart-container">
 					<div class="cart-label">${__('Item Cart')}</div>
 					<div class="cart-header">
-						<div class="name-header" style="flex:3">${__('Item')}</div>
-						<div class="qty-header" style="flex: 1">${__('Qty')}</div>
-						`
+						<div class="name-header" style="flex: 3">${__('Item')}</div>
+						<div class="item-code-header" style="flex: 2">${__('Item Code')}</div>
+						<div class="oem-header" style="flex: 2">${__('OEM Part No.')}</div>
+						<div class="rate-header" style="flex: 1">${__('Rate')}</div>
+						<div class="qty-header" style="flex: 1">${__('Avail. Qty')}</div>
+						<div class="brand-header" style="flex: 1">${__('Brand')}</div>
+						<div class="part-header" style="flex: 1">${__('Part')}</div>
+						<div class="vehicle-header" style="flex: 1">${__('Vehicle')}</div>`
 			if(this.custom_show_uom_in_cart){
 				html += `<div class="uom-header" style="flex: 1">${__('UOM')}</div>`
 			}
@@ -177,7 +182,7 @@ posnext.PointOfSale.ItemCart = class {
 							border: none;
 							border-radius: 5px;
 							cursor: pointer;
-							flex: 1;">${__('Held')}</div>
+							flex: 1;">${__('Send to Store Manager')}</div>
 				<div class="checkout-btn-order checkout-btn" style="
 				padding: 10px;
 							align-items: center;
@@ -186,7 +191,7 @@ posnext.PointOfSale.ItemCart = class {
 							border: none;
 							border-radius: 5px;
 							cursor: pointer;
-							flex: 1;">${__('Order List')}</div>
+							flex: 1;">${__('Recall Requests')}</div>
 			</div>	
 			<div class="edit-cart-btn">${__('Edit Cart')}</div>`
 		)
