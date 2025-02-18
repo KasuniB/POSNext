@@ -327,7 +327,7 @@ def create_opening_voucher(pos_profile, company, balance_details):
 
 @frappe.whitelist()
 def get_past_order_list(search_term, status, pos_profile=None, limit=20):
-	fields = ["name", "grand_total", "currency", "customer", "posting_time", "posting_date"]
+	fields = ["name", "grand_total", "currency", "customer", "posting_time", "transaction_date"]
 	invoice_list = []
 	if status == "Unpaid":
 		status = ["in", ["Unpaid", "Partly Paid", "Overdue"]]
@@ -335,7 +335,7 @@ def get_past_order_list(search_term, status, pos_profile=None, limit=20):
 	if search_term and status:
 		fltr1 = {"customer": ["like", "%{}%".format(search_term)], "status": status}
 		if pos_profile:
-			fltr1 = {"customer": ["like", "%{}%".format(search_term)], "status": status, "pos_profile": pos_profile}
+			fltr1 = {"customer": ["like", "%{}%".format(search_term)], "status": status, }
 		invoices_by_customer = frappe.db.get_all(
 			"Sales Order",
 			filters=fltr1,
@@ -344,7 +344,7 @@ def get_past_order_list(search_term, status, pos_profile=None, limit=20):
 		)
 		fltr2 = {"name": ["like", "%{}%".format(search_term)], "status": status}
 		if pos_profile:
-			fltr2 = {"name": ["like", "%{}%".format(search_term)], "status": status, "pos_profile": pos_profile}
+			fltr2 = {"name": ["like", "%{}%".format(search_term)], "status": status,}
 		invoices_by_name = frappe.db.get_all(
 			"Sales Order",
 			filters=fltr2,
@@ -356,7 +356,7 @@ def get_past_order_list(search_term, status, pos_profile=None, limit=20):
 	elif status:
 		fltr = {"status": status}
 		if pos_profile:
-			fltr = {"status": status, "pos_profile": pos_profile}
+			fltr = {"status": status}
 		invoice_list = frappe.db.get_all(
 			"Sales Order", filters=fltr, fields=fields, page_length=limit
 		)
