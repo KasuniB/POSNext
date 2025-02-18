@@ -75,17 +75,16 @@ posnext.PointOfSale.ItemCart = class {
 					<div class="cart-header">
 						<div class="name-header" style="flex: 3">${__('Item')}</div>
 						<div class="item-code-header" style="flex: 2">${__('Item Code')}</div>
+						<div class="vehicle-header" style="flex: 1">${__('Vehicle Model')}</div>
 						<div class="oem-header" style="flex: 2">${__('OEM Part No.')}</div>
-						<div class="rate-header" style="flex: 1">${__('Rate')}</div>
-						<div class="qty-header" style="flex: 1">${__('Avail. Qty')}</div>
 						<div class="brand-header" style="flex: 1">${__('Brand')}</div>
-						<div class="part-header" style="flex: 1">${__('Part')}</div>
-						<div class="vehicle-header" style="flex: 1">${__('Vehicle')}</div>`
+						<div class="qty-header" style="flex: 1">${__('Avail. Qty')}</div>
+						<div class="base-rate-header" style="flex: 1">${__('Rate')}</div>`
 			if(this.custom_show_uom_in_cart){
 				html += `<div class="uom-header" style="flex: 1">${__('UOM')}</div>`
 			}
 			if(this.custom_edit_rate){
-				html += `<div class="rate-header" style="flex: 1">${__('Rate')}</div>`
+				html += `<div class="editable-rate-header" style="flex: 1">${__('Edit Rate')}</div>`
 			}
 			if(this.custom_use_discount_percentage){
 				html += `<div class="discount-perc-header" style="flex: 1">${__('Disc%')}</div>`
@@ -97,7 +96,7 @@ posnext.PointOfSale.ItemCart = class {
 				html += `<div class="incoming-rate-header" style="flex: 1">${__('Inc.Rate')}</div>`
 			}
 			if(this.custom_show_logical_rack_in_cart){
-				html += `<div class="incoming-rate-header" style="flex: 1">${__('Rack')}</div>`
+				html += `<div class="logical-rack-header" style="flex: 1">${__('Rack')}</div>`
 			}
 			if(this.custom_show_last_customer_rate){
 				html += `<div class="last-customer-rate-header" style="flex: 1">${__('LC Rate')}</div>`

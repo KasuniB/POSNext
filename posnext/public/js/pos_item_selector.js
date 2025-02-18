@@ -237,45 +237,17 @@ posnext.PointOfSale.ItemSelector = class {
 			this.$items_container.append(
 				`<div class="abs-cart-container" style="overflow-y:hidden">
 					<div class="cart-header">
-					${get_item_code_header()}
-						<div style="flex: 1">${__('Rate')}</div>
-						<div style="flex: 1">${__('Avail. Qty')}</div>
+						<div style="flex: 1">${__('Item Code')}</div>
+						<div style="flex: 2">${__('Item')}</div>
+						<div style="flex: 1">${__('Vehicle Model')}</div>
+						<div style="flex: 1">${__('OEM Part No.')}</div>
 						<div style="flex: 1">${__('Brand')}</div>
-						<div style="flex: 1">${__('Part')}</div>
-						<div style="flex: 1">${__('Vehicle')}</div>
+						<div style="flex: 1">${__('Avail. Qty')}</div>
+						<div style="flex: 1">${__('Rate')}</div>
 					</div>
 					<div class="cart-items-section" style="overflow-y:scroll;font-size: 12px"></div>
 				</div>`)
 
-			function get_item_code_header() {
-				var flex_value = 3
-				 if(!me.custom_show_item_code && !me.custom_show_last_incoming_rate && !me.custom_show_oem_part_number && !me.custom_show_logical_rack){
-					flex_value = 2
-				}
-				var html_header = ``
-				if(me.custom_show_item_code){
-					// flex_value -= 1
-					html_header += `<div style="flex: 1">${__('Item Code')}</div>`
-				}
-				if(me.custom_show_last_incoming_rate){
-					// flex_value -= 1
-					html_header += `<div style="flex: 1">${__('Inc.Rate')}</div>`
-				}
-				if(me.custom_show_oem_part_number){
-					// flex_value -= 1
-					html_header += `<div style="flex: 1">${__('OEM')} <br> ${__('Part No.')}</div>`
-				}
-				if(me.custom_show_logical_rack){
-					// flex_value -= 1
-					html_header += `<div style="flex: 1">${__('Rack')}</div>`
-				}
-				if(flex_value > 0){
-					return `<div style="flex: ` + flex_value + `">${__('Item')}</div>` + html_header
-				} else {
-					return `<div>${__('Item')}</div>` + html_header
-				}
-
-            }
 			this.make_cart_items_section();
 
 			items.forEach(item => {
@@ -313,7 +285,7 @@ posnext.PointOfSale.ItemSelector = class {
 			data-item-code="${escape(item_data.item_code)}" 
 			data-serial-no="${escape(item_data.serial_no)}"
 			data-batch-no="${escape(item_data.batch_no)}"
-			data-uom="${escape(item_data.brand)}" 
+			data-brand="${escape(item_data.brand)}" 
 			data-uom="${escape(item_data.uom)}"
 			data-rate="${escape(item_data.price_list_rate || 0)}"
 			data-valuation-rate="${escape(item_data.valuation_rate || item_data.custom_valuation_rate)}"
@@ -321,86 +293,32 @@ posnext.PointOfSale.ItemSelector = class {
 			data-item-logical-rack="${item_data.custom_logical_rack}"
 			title="${item_data.item_name}"
 			data-row-name="${escape(item_data.item_code)}">
-				${get_item_image_html()}
+				<div style="flex: 1; text-align: left">
+					${item_data.item_code}
+				</div>
 				<div class="item-details" style="display: flex; flex: 2">
 					<div style="overflow-wrap: break-word; overflow: hidden; white-space: normal; font-weight: 700; margin-right: 10px">
 						${item_data.item_name}
 					</div>
-					${get_description_html()}
-				</div>
-				${get_item_code()}
-				<div class="item-rate" style="flex: 1; text-align: left">
-					${format_currency(item_data.price_list_rate, currency)}
-				</div>
-				<div class="item-qty" style="flex: 1; text-align: center">
-					${item_data.actual_qty || 0}
-				</div>
-				<div class="item-brand" style="flex: 1; text-align: left">
-					${item_data.brand || ''}
-				</div>
-				<div class="item-part" style="flex: 1; text-align: left">
-					${item_data.part || ''}
 				</div>
 				<div class="item-vehicle" style="flex: 1; text-align: left">
 					${item_data.vehicle || ''}
 				</div>
+				<div style="flex: 1; text-align: left">
+					${item_data.custom_oem_part_number || ""}
+				</div>
+				<div class="item-brand" style="flex: 1; text-align: left">
+					${item_data.brand || ''}
+				</div>
+				<div class="item-qty" style="flex: 1; text-align: center">
+					${item_data.actual_qty || 0}
+				</div>
+				<div class="item-rate" style="flex: 1; text-align: left">
+					${format_currency(item_data.price_list_rate, currency)}
+				</div>
 			</div>
 			<div class="seperator"></div>`
 		);
-
-		function get_item_code() {
-			let html_code = '';
-			if (me.custom_show_item_code) {
-				html_code += `<div style="flex: 1; text-align: left">
-					${item_data.item_code}<br>${item_data.uom}
-				</div>`;
-			}
-			if (me.custom_show_last_incoming_rate) {
-				html_code += `<div style="flex: 1; text-align: left">
-					${parseFloat(item_data.valuation_rate).toFixed(2)}
-				</div>`;
-			}
-			if (me.custom_show_oem_part_number) {
-				html_code += `<div style="flex: 1; text-align: left">
-					${item_data.custom_oem_part_number || ""}
-				</div>`;
-			}
-			if (me.custom_show_logical_rack) {
-				html_code += `<div style="flex: 1; text-align: left">
-					${item_data.rack || ""}
-				</div>`;
-			}
-			return html_code;
-		}
-
-		function get_item_image_html() {
-			const { image, item_name } = item_data;
-			if (!me.hide_images && image) {
-				return `
-					<div class="item-image">
-						<img
-							onerror="cur_pos.cart.handle_broken_image(this)"
-							src="${image}" alt="${frappe.get_abbr(item_name)}"">
-					</div>`;
-			} else {
-				return `<div class="item-image item-abbr">${frappe.get_abbr(item_name)}</div>`;
-			}
-		}
-
-		function get_description_html() {
-			if (item_data.description) {
-				if (item_data.description.indexOf('<div>') != -1) {
-					try {
-						item_data.description = $(item_data.description).text();
-					} catch (error) {
-						item_data.description = item_data.description.replace(/<div>/g, ' ').replace(/<\/div>/g, ' ').replace(/ +/g, ' ');
-					}
-				}
-				item_data.description = frappe.ellipsis(item_data.description, 45);
-				return `<div class="item-desc">${item_data.description}</div>`;
-			}
-			return ``;
-		}
 	}
 	get_item_html(item) {
 		const me = this;
@@ -664,6 +582,7 @@ posnext.PointOfSale.ItemSelector = class {
 			let batch_no = unescape($item.attr('data-batch-no'));
 			let serial_no = unescape($item.attr('data-serial-no'));
 			let uom = unescape($item.attr('data-uom'));
+			let brand = unescape($item.attr('data-brand'));
 			let rate = unescape($item.attr('data-rate'));
 			let valuation_rate = unescape($item.attr('data-valuation-rate'));
 			let custom_item_uoms = $item.attr('data-item-uoms');
@@ -676,7 +595,7 @@ posnext.PointOfSale.ItemSelector = class {
 			me.events.item_selected({
 				field: 'qty',
 				value: "+1",
-				item: { item_code, batch_no, serial_no, uom, rate ,valuation_rate, custom_item_uoms, custom_logical_rack}
+				item: { item_code, batch_no, serial_no, uom, brand,rate ,valuation_rate, custom_item_uoms, custom_logical_rack}
 			});
 			// me.search_field.set_focus();
 		});

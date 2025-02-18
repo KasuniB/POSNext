@@ -141,6 +141,7 @@ def get_items(start, page_length, price_list, item_group, pos_profile, search_te
 			item.name AS item_code,
 			item.custom_oem_part_number,
 			item.item_name,
+			item.brand,
 			item.description,
 			item.stock_uom,
 			{bin_valuation_rate}
@@ -336,7 +337,7 @@ def get_past_order_list(search_term, status, pos_profile=None, limit=20):
 		if pos_profile:
 			fltr1 = {"customer": ["like", "%{}%".format(search_term)], "status": status, "pos_profile": pos_profile}
 		invoices_by_customer = frappe.db.get_all(
-			"Sales Invoice",
+			"Sales Order",
 			filters=fltr1,
 			fields=fields,
 			page_length=limit,
@@ -345,7 +346,7 @@ def get_past_order_list(search_term, status, pos_profile=None, limit=20):
 		if pos_profile:
 			fltr2 = {"name": ["like", "%{}%".format(search_term)], "status": status, "pos_profile": pos_profile}
 		invoices_by_name = frappe.db.get_all(
-			"Sales Invoice",
+			"Sales Order",
 			filters=fltr2,
 			fields=fields,
 			page_length=limit,
@@ -357,7 +358,7 @@ def get_past_order_list(search_term, status, pos_profile=None, limit=20):
 		if pos_profile:
 			fltr = {"status": status, "pos_profile": pos_profile}
 		invoice_list = frappe.db.get_all(
-			"Sales Invoice", filters=fltr, fields=fields, page_length=limit
+			"Sales Order", filters=fltr, fields=fields, page_length=limit
 		)
 
 	return invoice_list
