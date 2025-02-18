@@ -445,7 +445,7 @@ posnext.PointOfSale.Controller = class {
 			wrapper: this.$components_wrapper,
 			events: {
 				open_invoice_data: (name) => {
-					frappe.db.get_doc('Sales Invoice', name).then((doc) => {
+					frappe.db.get_doc('Sales Order', name).then((doc) => {
 						this.order_summary.load_summary_of(doc);
 					});
 				},
@@ -471,7 +471,7 @@ posnext.PointOfSale.Controller = class {
 
 				process_return: (name) => {
 					this.recent_order_list.toggle_component(false);
-					frappe.db.get_doc('Sales Invoice', name).then((doc) => {
+					frappe.db.get_doc('Sales Order', name).then((doc) => {
 						frappe.run_serially([
 							() => this.make_return_invoice(doc),
 							() => this.cart.load_invoice(),

@@ -1600,9 +1600,9 @@ this.highlight_checkout_btn(true);
 	}
 
 	fetch_customer_transactions() {
-		frappe.db.get_list('Sales Invoice', {
+		frappe.db.get_list('Sales Order', {
 			filters: { customer: this.customer_info.customer, docstatus: 1 },
-			fields: ['name', 'grand_total', 'status', 'posting_date', 'posting_time', 'currency'],
+			fields: ['name', 'grand_total', 'workflow_state', 'transaction_date', 'currency'],
 			limit: 20
 		}).then((res) => {
 			const transaction_container = this.$customer_section.find('.customer-transactions');
@@ -1614,16 +1614,16 @@ this.highlight_checkout_btn(true);
 				return;
 			}
 
-			const elapsed_time = moment(res[0].posting_date+" "+res[0].posting_time).fromNow();
+			const elapsed_time = moment(res[0].transaction_date).fromNow();
 			this.$customer_section.find('.customer-desc').html(`Last transacted ${elapsed_time}`);
 
 			res.forEach(invoice => {
-				const posting_datetime = moment(invoice.posting_date+" "+invoice.posting_time).format("Do MMMM, h:mma");
+				const posting_datetime = moment(invoice.transaction_date).format("Do MMMM, h:mma");
 				let indicator_color = {
-					'Paid': 'green',
-					'Draft': 'red',
-					'Return': 'gray',
-					'Consolidated': 'blue'
+					'Requisition Sent': 'green',
+					'Item(s) Dispatched': 'red',
+					'Item(s) Received': 'gray',
+					'Item(s) Confirmed': 'blue'
 				};
 
 				transaction_container.append(

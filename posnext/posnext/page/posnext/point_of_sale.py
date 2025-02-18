@@ -329,22 +329,22 @@ def create_opening_voucher(pos_profile, company, balance_details):
 def get_past_order_list(search_term, status, pos_profile=None, limit=20):
 	fields = ["name", "grand_total", "currency", "customer", "transaction_date"]
 	invoice_list = []
-	if status == "Unpaid":
-		status = ["in", ["Unpaid", "Partly Paid", "Overdue"]]
+	if status == "Requisition Sent":
+		status = ["in", ["Requisition Sent", "Item(s) Dispatched", "Item(s) Received", "Item(s) Confirmed"]]
 
 	if search_term and status:
-		fltr1 = {"customer": ["like", "%{}%".format(search_term)], "status": status}
+		fltr1 = {"customer": ["like", "%{}%".format(search_term)], "workflow_state": status}
 		if pos_profile:
-			fltr1 = {"customer": ["like", "%{}%".format(search_term)], "status": status, }
+			fltr1 = {"customer": ["like", "%{}%".format(search_term)], "workflow_state": status, "pos_profile": pos_profile}
 		invoices_by_customer = frappe.db.get_all(
 			"Sales Order",
 			filters=fltr1,
 			fields=fields,
 			page_length=limit,
 		)
-		fltr2 = {"name": ["like", "%{}%".format(search_term)], "status": status}
+		fltr2 = {"name": ["like", "%{}%".format(search_term)], "workflow_state": status}
 		if pos_profile:
-			fltr2 = {"name": ["like", "%{}%".format(search_term)], "status": status,}
+			fltr2 = {"name": ["like", "%{}%".format(search_term)], "workflow_state": status, "pos_profile": pos_profile}
 		invoices_by_name = frappe.db.get_all(
 			"Sales Order",
 			filters=fltr2,
@@ -354,9 +354,9 @@ def get_past_order_list(search_term, status, pos_profile=None, limit=20):
 
 		invoice_list = invoices_by_customer + invoices_by_name
 	elif status:
-		fltr = {"status": status}
+		fltr = {"workflow_state": status}
 		if pos_profile:
-			fltr = {"status": status}
+			fltr = {"workflow_state": status, "pos_profile": pos_profile}
 		invoice_list = frappe.db.get_all(
 			"Sales Order", filters=fltr, fields=fields, page_length=limit
 		)
@@ -467,7 +467,7 @@ def get_lcr(customer=None, item_code=None):
 	d = None
 	if customer and item_code:
 		d = frappe.db.sql(f"""
-		SELECT item.rate FROM `tabSales Invoice Item` item INNER JOIN `tabSales Invoice` SI ON SI.name=item.parent
+		SELECT item.rate FROM `tabSales Order Item` item INNER JOIN `tabSales Order` SI ON SI.name=item.parent
 		WHERE SI.customer='{customer}' AND item.item_code='{item_code}' 
 		ORDER BY SI.creation desc 
 		LIMIT 1
