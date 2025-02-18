@@ -327,7 +327,7 @@ def create_opening_voucher(pos_profile, company, balance_details):
 
 @frappe.whitelist()
 def get_past_order_list(search_term, status, pos_profile=None, limit=20):
-	fields = ["name", "grand_total", "currency", "customer", "posting_time", "transaction_date"]
+	fields = ["name", "grand_total", "currency", "customer", "transaction_date"]
 	invoice_list = []
 	if status == "Unpaid":
 		status = ["in", ["Unpaid", "Partly Paid", "Overdue"]]
