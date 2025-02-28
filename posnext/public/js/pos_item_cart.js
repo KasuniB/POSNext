@@ -181,7 +181,7 @@ posnext.PointOfSale.ItemCart = class {
 							border: none;
 							border-radius: 5px;
 							cursor: pointer;
-							flex: 1;">${__('Send to Store Manager')}</div>
+							flex: 1;">${__('Held')}</div>
 				<div class="checkout-btn-order checkout-btn" style="
 				padding: 10px;
 							align-items: center;
@@ -190,7 +190,7 @@ posnext.PointOfSale.ItemCart = class {
 							border: none;
 							border-radius: 5px;
 							cursor: pointer;
-							flex: 1;">${__('Recall Requests')}</div>
+							flex: 1;">${__('Order List')}</div>
 			</div>	
 			<div class="edit-cart-btn">${__('Edit Cart')}</div>`
 		)

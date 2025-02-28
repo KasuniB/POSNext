@@ -70,10 +70,10 @@ posnext.PointOfSale.PastOrderList = class {
 		});
 		this.status_field = frappe.ui.form.make_control({
 			df: {
-				label: __('Order Status'),
+				label: __('Invoice Status'),
 				fieldtype: 'Select',
-				options: `Draft\nRequisition Sent\nItem(s) Dispatched\nItem(s) Received\nItem(s) Confirmed`,
-				placeholder: __('Filter by order status'),
+				options: `Draft\nPaid\nUnpaid\nReturn`,
+				placeholder: __('Filter by invoice status'),
 				onchange: function() {
 					if (me.$component.is(':visible')) me.refresh_list();
 				}
@@ -83,7 +83,7 @@ posnext.PointOfSale.PastOrderList = class {
 		});
 		this.search_field.toggle_label(false);
 		this.status_field.toggle_label(false);
-		this.status_field.set_value('Requisition Sent');
+		this.status_field.set_value('Draft');
 	}
 
 	refresh_list() {
