@@ -202,7 +202,7 @@ def search_for_serial_or_batch_or_barcode_number(search_value: str) -> Dict[str,
 	return scan_barcode(search_value)
 
 
-def get_conditions(search_term):
+'''def get_conditions(search_term):
 	condition = "("
 	condition += """item.name like {search_term}
 		or item.item_name like {search_term}""".format(
@@ -211,7 +211,39 @@ def get_conditions(search_term):
 	condition += add_search_fields_condition(search_term)
 	condition += ")"
 
-	return condition
+	return condition'''
+def get_conditions(search_term, new_items):
+    condition = "("
+    search_term = ' '.join(search_term.strip().split())  
+       
+    search_terms = search_term.split()  
+    like_conditions = []
+    for term in search_terms:
+        term_condition = """(item.name LIKE {term} 
+                             OR item.item_name LIKE {term} 
+                             OR item.description LIKE {term} 
+                             OR item.custom_oem_part_number LIKE {term})"""
+        term_condition = term_condition.format(term=frappe.db.escape("%" + term + "%"))
+        like_conditions.append(term_condition)
+       
+    condition += " AND ".join(like_conditions)
+        
+    if len(new_items) > 0:
+        new_item_conditions = []
+        for xx in new_items:
+            new_item_condition = """(item.name LIKE {xx} 
+                                    OR item.item_name LIKE {xx})""".format(
+                xx=frappe.db.escape("%" + xx.item + "%")
+            )
+            new_item_conditions.append(new_item_condition)
+        
+        condition += " OR (" + " OR ".join(new_item_conditions) + ")"
+    
+    condition += add_search_fields_condition(search_term)
+        
+    condition += ")"
+    
+    return condition
 
 
 def add_search_fields_condition(search_term):
