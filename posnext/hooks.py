@@ -22,6 +22,7 @@ app_include_js = [
     # "/assets/posnext/js/pos_past_order_summary.js",
     # "/assets/posnext/js/pos_payment.js",
     "posnext.bundle.js",
+     "/assets/posnext/node_modules/onscan.js/onscan.min.js",
 ]
 
 # include js, css files in header of web template

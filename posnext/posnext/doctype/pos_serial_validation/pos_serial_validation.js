@@ -1,5 +1,5 @@
-import onScan from "onscan.js";
 
+// pos_serial_validation.js (Client-side script)
 frappe.ui.form.on('POS Serial Validation', {
     refresh: function(frm) {
         frm.trigger('bind_events');
@@ -37,41 +37,60 @@ frappe.ui.form.on('POS Serial Validation', {
             $(frm.fields_dict.scan_barcode.input).focus();
         }
         
-        window.onScan = onScan;
-        onScan.decodeKeyEvent = function (oEvent) {
-            var iCode = this._getNormalizedKeyNum(oEvent);
-            switch (true) {
-                case iCode >= 48 && iCode <= 90: // numbers and letters
-                case iCode >= 106 && iCode <= 111: // operations on numeric keypad (+, -, etc.)
-                case (iCode >= 160 && iCode <= 164) || iCode == 170: // ^ ! # $ *
-                case iCode >= 186 && iCode <= 194: // (; = , - . / `)
-                case iCode >= 219 && iCode <= 222: // ([ \ ] ')
-                case iCode == 32: // spacebar
-                    if (oEvent.key !== undefined && oEvent.key !== '') {
-                        return oEvent.key;
-                    }
-                    var sDecoded = String.fromCharCode(iCode);
-                    switch (oEvent.shiftKey) {
-                        case false: sDecoded = sDecoded.toLowerCase(); break;
-                        case true: sDecoded = sDecoded.toUpperCase(); break;
-                    }
-                    return sDecoded;
-                case iCode >= 96 && iCode <= 105: // numbers on numeric keypad
-                    return 0 + (iCode - 96);
-            }
-            return '';
-        };
-
-        onScan.attachTo(document, {
-            onScan: (sScancode) => {
-                console.log("Barcode scanned:", sScancode);
-                if (frm.search_field && $(frm.search_field.wrapper).is(':visible')) {
-                    frm.search_field.set_focus();
-                    frm.search_field.set_value(sScancode);
-                    frm.events.add_serial_from_scan(frm, sScancode);
+        if(!window.onScan) {
+            console.log("Loading onScan.js library");
+            
+            // Load onScan.js dynamically
+            frappe.require('/assets/posnext/node_modules/onscan.js/onscan.min.js')
+                .then(() => {
+                    console.log("onScan.js loaded successfully");
+                    setup_scanner(frm);
+                })
+                .catch(err => {
+                    console.error("Failed to load onScan.js:", err);
+                    frappe.msgprint(__("Failed to load barcode scanner library. Please check console for details."));
+                });
+        } else {
+            console.log("onScan.js already loaded");
+            setup_scanner(frm);
+        }
+        
+        function setup_scanner(frm) {
+            window.onScan.decodeKeyEvent = function (oEvent) {
+                var iCode = this._getNormalizedKeyNum(oEvent);
+                switch (true) {
+                    case iCode >= 48 && iCode <= 90: // numbers and letters
+                    case iCode >= 106 && iCode <= 111: // operations on numeric keypad (+, -, etc.)
+                    case (iCode >= 160 && iCode <= 164) || iCode == 170: // ^ ! # $ *
+                    case iCode >= 186 && iCode <= 194: // (; = , - . / `)
+                    case iCode >= 219 && iCode <= 222: // ([ \ ] ')
+                    case iCode == 32: // spacebar
+                        if (oEvent.key !== undefined && oEvent.key !== '') {
+                            return oEvent.key;
+                        }
+                        var sDecoded = String.fromCharCode(iCode);
+                        switch (oEvent.shiftKey) {
+                            case false: sDecoded = sDecoded.toLowerCase(); break;
+                            case true: sDecoded = sDecoded.toUpperCase(); break;
+                        }
+                        return sDecoded;
+                    case iCode >= 96 && iCode <= 105: // numbers on numeric keypad
+                        return 0 + (iCode - 96);
                 }
-            }
-        });
+                return '';
+            };
+
+            window.onScan.attachTo(document, {
+                onScan: (sScancode) => {
+                    console.log("Barcode scanned:", sScancode);
+                    if (frm.search_field && $(frm.search_field.wrapper).is(':visible')) {
+                        frm.search_field.set_focus();
+                        frm.search_field.set_value(sScancode);
+                        frm.events.add_serial_from_scan(frm, sScancode);
+                    }
+                }
+            });
+        }
     },
     
     add_serial_from_scan: function(frm, serial_no) {
