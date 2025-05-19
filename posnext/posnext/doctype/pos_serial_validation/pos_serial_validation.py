@@ -1,9 +1,14 @@
-# pos_serial_validation.py (Server-side code)
 import frappe
 from frappe import _
 from frappe.model.document import Document
 
 class POSSerialValidation(Document):
+    def onload(self):
+        """Set defaults and fetch values when the document is loaded"""
+        # Ensure the client-side script is triggered
+        if not self.is_new():
+            return
+            
     def validate(self):
         self.validate_pos_opening_entry()
         self.validate_unique_serial_numbers()
@@ -17,6 +22,9 @@ class POSSerialValidation(Document):
     
     def validate_unique_serial_numbers(self):
         """Ensure serial numbers are unique in the table"""
+        if not self.serial_numbers:
+            return
+            
         serial_numbers = []
         for row in self.serial_numbers:
             if row.serial_no in serial_numbers:

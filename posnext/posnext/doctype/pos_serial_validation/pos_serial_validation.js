@@ -1,9 +1,16 @@
-// pos_serial_validation.js (Client-side script)
 import onScan from "onscan.js";
 
 frappe.ui.form.on('POS Serial Validation', {
     refresh: function(frm) {
         frm.trigger('bind_events');
+        
+        // Make sure all fields are visible and rendered correctly
+        frm.refresh_fields();
+    },
+    
+    setup: function(frm) {
+        // Make sure the form is fully set up
+        frm.refresh_fields();
     },
     
     // When POS Opening Entry is selected, set the posting date
@@ -13,14 +20,22 @@ frappe.ui.form.on('POS Serial Validation', {
                 .then(r => {
                     if(r.message && r.message.posting_date) {
                         frm.set_value('posting_date', r.message.posting_date);
+                        frm.refresh_field('posting_date');
                     }
                 });
         }
     },
     
     bind_events: function(frm) {
+        console.log("Binding barcode scanning events");
+        
         // Set search_field to the scan_barcode field
         frm.search_field = frm.fields_dict.scan_barcode;
+        
+        // Make sure field is actually visible
+        if(frm.fields_dict.scan_barcode) {
+            $(frm.fields_dict.scan_barcode.input).focus();
+        }
         
         window.onScan = onScan;
         onScan.decodeKeyEvent = function (oEvent) {
@@ -49,6 +64,7 @@ frappe.ui.form.on('POS Serial Validation', {
 
         onScan.attachTo(document, {
             onScan: (sScancode) => {
+                console.log("Barcode scanned:", sScancode);
                 if (frm.search_field && $(frm.search_field.wrapper).is(':visible')) {
                     frm.search_field.set_focus();
                     frm.search_field.set_value(sScancode);
