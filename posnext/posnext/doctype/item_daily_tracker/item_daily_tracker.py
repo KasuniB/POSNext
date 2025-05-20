@@ -148,18 +148,18 @@ def handle_pos_closing_submit(doc, method):
     """
     pos_opening = doc.pos_opening_entry
     if not pos_opening:
-        frappe.log_error(f"No POS Opening Entry on Closing Entry {doc.name}", "ItemDailyTracker")
+        frappe.log_error(f"No POS Opening Entry on Closing Entry {doc.name}", "Item Daily Tracker")
         return
 
     # Try to fetch an existing tracker
     tracker_name = frappe.db.get_value(
-        "ItemDailyTracker",
+        "Item Daily Tracker",
         {"pos_opening_entry": pos_opening},
         "name"
     )
 
     if tracker_name:
-        tracker = frappe.get_doc("ItemDailyTracker", tracker_name)
+        tracker = frappe.get_doc("Item Daily Tracker", tracker_name)
     else:
         tracker = frappe.new_doc("ItemDailyTracker")
         tracker.pos_opening_entry = pos_opening
@@ -181,4 +181,4 @@ def handle_pos_closing_submit(doc, method):
         tracker.save(ignore_permissions=True)
         # no need to re-submit if unchanged
 
-    frappe.log_error(f"Auto‑populated ItemDailyTracker {tracker.name} on POS Closing Entry {doc.name}", "ItemDailyTracker")
+    frappe.log_error(f"Auto‑populated Item Daily Tracker {tracker.name} on POS Closing Entry {doc.name}", "Item Daily Tracker")
