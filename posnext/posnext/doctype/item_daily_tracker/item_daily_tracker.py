@@ -138,3 +138,47 @@ def populate_items(docname, pos_opening_entry):
         frappe.log_error(f"Error populating items for ItemDailyTracker {docname}: {str(e)}")
         frappe.msgprint(__("An error occurred while populating items: {0}").format(str(e)))
         return {"status": "error", "message": str(e)}
+
+
+def handle_pos_closing_submit(doc, method):
+    """
+    Fired when a POS Closing Entry is submitted.
+    Finds or creates the matching ItemDailyTracker for the same
+    POS Opening Entry, populates its items, saves (and submits) it.
+    """
+    pos_opening = doc.pos_opening_entry
+    if not pos_opening:
+        frappe.log_error(f"No POS Opening Entry on Closing Entry {doc.name}", "ItemDailyTracker")
+        return
+
+    # Try to fetch an existing tracker
+    tracker_name = frappe.db.get_value(
+        "ItemDailyTracker",
+        {"pos_opening_entry": pos_opening},
+        "name"
+    )
+
+    if tracker_name:
+        tracker = frappe.get_doc("ItemDailyTracker", tracker_name)
+    else:
+        tracker = frappe.new_doc("ItemDailyTracker")
+        tracker.pos_opening_entry = pos_opening
+
+    # Populate (this will clear and refill .items)
+    tracker.fetch_reconciliation_data()
+
+    # Save or update
+    if tracker.docstatus == 0:
+        tracker.save()
+        # Optionally submit the tracker if you want it to be a submitted doc
+        try:
+            tracker.submit()
+        except frappe.ValidationError:
+            # If your tracker is meant to stay as a Draft, you can skip submission
+            pass
+    else:
+        # Already submitted—just update and re-submit if needed
+        tracker.save(ignore_permissions=True)
+        # no need to re-submit if unchanged
+
+    frappe.log_error(f"Auto‑populated ItemDailyTracker {tracker.name} on POS Closing Entry {doc.name}", "ItemDailyTracker")
