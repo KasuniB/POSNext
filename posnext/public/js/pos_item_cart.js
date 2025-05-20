@@ -397,7 +397,19 @@ this.highlight_checkout_btn(true);
 										() => frappe.dom.unfreeze()
 									]);
 								})
-								me.events.save_draft_invoice()
+								me.events.save_draft_invoice().then(() => {
+            								// Call print_receipt from PastOrderSummary
+           								if (me.events.past_order_summary) {
+                								me.events.past_order_summary.print_receipt();
+           							        } else {
+               									 frappe.show_alert({
+                   								 message: __('Past Order Summary not available.'),
+                  								  indicator: 'red'
+             											   });
+            								    frappe.utils.play_sound("error");
+										}
+        });
+            }
 
 								d.hide();
 							}
