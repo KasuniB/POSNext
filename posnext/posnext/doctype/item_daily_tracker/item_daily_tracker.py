@@ -161,7 +161,7 @@ def handle_pos_closing_submit(doc, method):
     if tracker_name:
         tracker = frappe.get_doc("Item Daily Tracker", tracker_name)
     else:
-        tracker = frappe.new_doc("ItemDailyTracker")
+        tracker = frappe.new_doc("Item Daily Tracker")
         tracker.pos_opening_entry = pos_opening
 
     # Populate (this will clear and refill .items)
