@@ -6,13 +6,11 @@ from frappe.model.document import Document
 
 class ItemDailyTracker(Document):
     def validate(self):
-        # Clear existing items to ensure a fresh start
+        # Clear and repopulate items on save (optional, for manual save scenarios)
         self.items = []
-        
-        # Fetch data if pos_opening_entry is set
         if self.pos_opening_entry:
             self.fetch_reconciliation_data()
-    
+
     def fetch_reconciliation_data(self):
         """
         Fetches data from POS Serial Validation and POS Closing Entry,
@@ -30,7 +28,6 @@ class ItemDailyTracker(Document):
         )
         
         for validation in serial_validations:
-            # Fetch serial numbers from child table
             serial_details = frappe.get_all(
                 "Serial Numbers Table",
                 filters={"parent": validation.name},
@@ -46,7 +43,6 @@ class ItemDailyTracker(Document):
                         "serials": []
                     }
                 
-                # Count unique serial numbers
                 if detail.serial_no not in serial_items[item_code]["serials"]:
                     serial_items[item_code]["serials"].append(detail.serial_no)
                     serial_items[item_code]["serial_count"] += 1
@@ -59,7 +55,6 @@ class ItemDailyTracker(Document):
         )
         
         for closing in closing_entries:
-            # Fetch invoices from POS Invoice Reference
             invoices = frappe.get_all(
                 "POS Invoice Reference",
                 filters={"parent": closing.name},
@@ -67,7 +62,6 @@ class ItemDailyTracker(Document):
             )
             
             for inv in invoices:
-                # Fetch items from each invoice
                 items = frappe.get_all(
                     "POS Invoice Item",
                     filters={"parent": inv.pos_invoice},
@@ -84,6 +78,9 @@ class ItemDailyTracker(Document):
                     
                     invoice_items[item_code]["invoice_count"] += item.qty
         
+        # Clear existing items to ensure no manual entries persist
+        self.items = []
+        
         # Combine data and populate the items child table
         all_item_codes = set(list(serial_items.keys()) + list(invoice_items.keys()))
         
@@ -92,10 +89,8 @@ class ItemDailyTracker(Document):
             invoice_count = invoice_items.get(item_code, {}).get("invoice_count", 0)
             item_name = serial_items.get(item_code, {}).get("item_name") or invoice_items.get(item_code, {}).get("item_name") or ""
             
-            # Calculate difference
             difference = serial_count - invoice_count
             
-            # Append to items child table
             self.append("items", {
                 "item_code": item_code,
                 "item_name": item_name,
@@ -103,3 +98,24 @@ class ItemDailyTracker(Document):
                 "invoice_count": invoice_count,
                 "difference": difference
             })
+
+@frappe.whitelist()
+def populate_items(docname, pos_opening_entry):
+    """
+    Whitelisted method to populate the items child table based on pos_opening_entry.
+    """
+    try:
+        doc = frappe.get_doc("ItemDailyTracker", docname)
+        doc.pos_opening_entry = pos_opening_entry
+        doc.items = []  # Clear any existing items
+        if pos_opening_entry:
+            doc.fetch_reconciliation_data()
+            doc.save()  # Save to persist the changes
+        return {
+            "status": "success",
+            "items": [item.as_dict() for item in doc.items]
+        }
+    except Exception as e:
+        frappe.log_error(f"Error populating items for ItemDailyTracker {docname}: {str(e)}")
+        frappe.msgprint(__("An error occurred while populating items. Please try again."))
+        return {"status": "error", "message": str(e)}
