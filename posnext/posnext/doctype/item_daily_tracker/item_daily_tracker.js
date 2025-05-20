@@ -1,12 +1,27 @@
 // Copyright (c) 2025, YourCompany and contributors
 // For license information, please see license.txt
 
-frappe.ui.form.on('Item Daily Tracker', {
+frappe.ui.form.on('ItemDailyTracker', {
     refresh: function(frm) {
-        // Add custom button to fetch data
+        // Add custom button to manually trigger population (optional)
         frm.add_custom_button(__('Fetch Data'), function() {
-            // Trigger save to call validate and fetch_reconciliation_data
-            frm.save();
+            if (frm.doc.pos_opening_entry) {
+                frappe.call({
+                    method: "your_app_name.your_module_name.doctype.item_daily_tracker.item_daily_tracker.populate_items",
+                    args: {
+                        docname: frm.doc.name,
+                        pos_opening_entry: frm.doc.pos_opening_entry
+                    },
+                    callback: function(response) {
+                        if (response.message && response.message.status === "success") {
+                            frm.set_value('items', response.message.items);
+                            frm.refresh_field('items');
+                        }
+                    }
+                });
+            } else {
+                frappe.msgprint(__("Please select a POS Opening Entry."));
+            }
         });
         
         // Highlight differences in the items table
@@ -19,7 +34,7 @@ frappe.ui.form.on('Item Daily Tracker', {
     },
     
     pos_opening_entry: function(frm) {
-        // When POS Opening Entry is set, fetch company and date
+        // When POS Opening Entry changes, fetch company, date, and populate items
         if (frm.doc.pos_opening_entry) {
             frappe.call({
                 method: 'frappe.client.get_value',
@@ -35,16 +50,29 @@ frappe.ui.form.on('Item Daily Tracker', {
                     if (data) {
                         frm.set_value('company', data.company);
                         frm.set_value('date', data.period_start_date);
-                        // Automatically trigger data fetch
-                        frm.save();
                     }
+                    // Trigger item population
+                    frappe.call({
+                        method: "your_app_name.your_module_name.doctype.item_daily_tracker.item_daily_tracker.populate_items",
+                        args: {
+                            docname: frm.doc.name,
+                            pos_opening_entry: frm.doc.pos_opening_entry
+                        },
+                        callback: function(response) {
+                            if (response.message && response.message.status === "success") {
+                                frm.set_value('items', response.message.items);
+                                frm.refresh_field('items');
+                            }
+                        }
+                    });
                 }
             });
         } else {
-            // Clear fields if pos_opening_entry is unset
+            // Clear fields and items if pos_opening_entry is unset
             frm.set_value('company', '');
             frm.set_value('date', '');
             frm.set_value('items', []);
+            frm.refresh_field('items');
         }
     }
 });
