@@ -120,5 +120,6 @@
  ],
  "sort_field": "modified",
  "sort_order": "DESC",
+ "is_submittable": 1,
  "states": []
 }
