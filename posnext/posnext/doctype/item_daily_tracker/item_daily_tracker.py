@@ -6,7 +6,7 @@ from frappe.model.document import Document
 
 class ItemDailyTracker(Document):
     def validate(self):
-        # Clear and repopulate items on save (optional, for manual save scenarios)
+        # Optional: Clear and repopulate items on save
         self.items = []
         if self.pos_opening_entry:
             self.fetch_reconciliation_data()
@@ -26,13 +26,15 @@ class ItemDailyTracker(Document):
             filters={"pos_opening_entry": self.pos_opening_entry},
             fields=["name"]
         )
-        
+        frappe.log_error(f"Found {len(serial_validations)} POS Serial Validations for {self.pos_opening_entry}")
+
         for validation in serial_validations:
             serial_details = frappe.get_all(
                 "Serial Numbers Table",
                 filters={"parent": validation.name},
                 fields=["item_code", "item_name", "serial_no"]
             )
+            frappe.log_error(f"Found {len(serial_details)} serial details for validation {validation.name}")
             
             for detail in serial_details:
                 item_code = detail.item_code
@@ -53,6 +55,7 @@ class ItemDailyTracker(Document):
             filters={"pos_opening_entry": self.pos_opening_entry},
             fields=["name"]
         )
+        frappe.log_error(f"Found {len(closing_entries)} POS Closing Entries for {self.pos_opening_entry}")
         
         for closing in closing_entries:
             invoices = frappe.get_all(
@@ -78,11 +81,12 @@ class ItemDailyTracker(Document):
                     
                     invoice_items[item_code]["invoice_count"] += item.qty
         
-        # Clear existing items to ensure no manual entries persist
+        # Clear existing items
         self.items = []
         
         # Combine data and populate the items child table
         all_item_codes = set(list(serial_items.keys()) + list(invoice_items.keys()))
+        frappe.log_error(f"Total unique item codes: {len(all_item_codes)}")
         
         for item_code in all_item_codes:
             serial_count = serial_items.get(item_code, {}).get("serial_count", 0)
@@ -98,24 +102,39 @@ class ItemDailyTracker(Document):
                 "invoice_count": invoice_count,
                 "difference": difference
             })
+        
+        if not all_item_codes:
+            frappe.msgprint(__("No items found for the selected POS Opening Entry."))
 
 @frappe.whitelist()
 def populate_items(docname, pos_opening_entry):
     """
     Whitelisted method to populate the items child table based on pos_opening_entry.
+    Works for both new and existing documents.
     """
     try:
-        doc = frappe.get_doc("ItemDailyTracker", docname)
+        # Load or create the document
+        if docname and frappe.db.exists("ItemDailyTracker", docname):
+            doc = frappe.get_doc("ItemDailyTracker", docname)
+        else:
+            doc = frappe.new_doc("ItemDailyTracker")
+            docname = doc.name  # Get the name of the new document
+
         doc.pos_opening_entry = pos_opening_entry
         doc.items = []  # Clear any existing items
         if pos_opening_entry:
             doc.fetch_reconciliation_data()
             doc.save()  # Save to persist the changes
+            frappe.log_error(f"Populated {len(doc.items)} items for ItemDailyTracker {docname}")
+        else:
+            frappe.msgprint(__("No POS Opening Entry provided."))
+        
         return {
             "status": "success",
+            "docname": docname,
             "items": [item.as_dict() for item in doc.items]
         }
     except Exception as e:
         frappe.log_error(f"Error populating items for ItemDailyTracker {docname}: {str(e)}")
-        frappe.msgprint(__("An error occurred while populating items. Please try again."))
+        frappe.msgprint(__("An error occurred while populating items: {0}").format(str(e)))
         return {"status": "error", "message": str(e)}
