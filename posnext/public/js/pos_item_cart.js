@@ -411,7 +411,8 @@ this.highlight_checkout_btn(true);
         });
             }
 
-								d.hide();
+						}
+							    d.hide();
 							}
 						})
 					}
