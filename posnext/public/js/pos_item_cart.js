@@ -400,7 +400,8 @@ this.highlight_checkout_btn(true);
 								me.events.save_draft_invoice().then(() => {
 									if (me.events.past_order_summary){
 										me.events.past_order_summary.print_receipt();
-									} else { frappe.show_alert('Past Order Summary is not available.'),
+									} else { frappe.show_alert({
+										message: __('Past Order Summary is not available.'),
 										indicator: 'red'
 												   });
 
