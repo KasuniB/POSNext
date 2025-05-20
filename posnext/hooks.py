@@ -53,7 +53,7 @@ doctype_js = {"POS Profile" : "public/js/pos_profile.js"}
 
 doc_events = {
     "POS Closing Entry": {
-        "on_submit": "posnext.posnext.doctype.item_daily_tracker.item_daily_tracker.handle_pos_closing_submit"
+        "on_submit": "posnext.doctype.item_daily_tracker.item_daily_tracker.handle_pos_closing_submit"
     }
 }
 
