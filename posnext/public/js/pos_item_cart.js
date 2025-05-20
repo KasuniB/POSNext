@@ -398,6 +398,7 @@ this.highlight_checkout_btn(true);
 									]);
 								})
 								me.events.save_draft_invoice()
+								me.events.past_order_summary.print_receipt()
 
 								d.hide();
 							}
@@ -462,6 +463,7 @@ numpad_num.on('click', '.delete', function() {
 					})
 			} else {
 				me.events.save_draft_invoice();
+				me.events.past_order_summary.print_receipt();
 			}
 		});
 		this.$component.on('click', '.checkout-btn-order', () => {
