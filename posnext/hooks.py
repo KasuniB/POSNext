@@ -51,6 +51,13 @@ doctype_js = {"POS Profile" : "public/js/pos_profile.js"}
 # include app icons in desk
 # app_include_icons = "posnext/public/icons.svg"
 
+doc_events = {
+    "POS Closing Entry": {
+        "on_submit": "posnext.doctype.item_daily_tracker.item_daily_tracker.handle_pos_closing_submit"
+    }
+}
+
+
 # Home Pages
 # ----------
 
