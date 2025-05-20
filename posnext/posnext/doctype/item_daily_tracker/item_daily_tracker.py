@@ -6,19 +6,23 @@ from frappe.model.document import Document
 
 class ItemDailyTracker(Document):
     def validate(self):
-        # Clear existing items before fetching new ones
+        # Clear existing items to ensure a fresh start
         self.items = []
         
+        # Fetch data if pos_opening_entry is set
         if self.pos_opening_entry:
             self.fetch_reconciliation_data()
     
     def fetch_reconciliation_data(self):
         """
         Fetches data from POS Serial Validation and POS Closing Entry,
-        then compares the counts for each item code
+        compares counts for each item, and populates the items child table.
         """
-        # Get all items from POS Serial Validation
+        # Initialize dictionaries to store item counts
         serial_items = {}
+        invoice_items = {}
+
+        # Fetch items from POS Serial Validation
         serial_validations = frappe.get_all(
             "POS Serial Validation",
             filters={"pos_opening_entry": self.pos_opening_entry},
@@ -26,9 +30,9 @@ class ItemDailyTracker(Document):
         )
         
         for validation in serial_validations:
-            # Get all serial numbers in this validation
+            # Fetch serial numbers from child table
             serial_details = frappe.get_all(
-                "Serial Numbers Table",  # Assuming this is the child table in POS Serial Validation
+                "Serial Numbers Table",
                 filters={"parent": validation.name},
                 fields=["item_code", "item_name", "serial_no"]
             )
@@ -42,13 +46,12 @@ class ItemDailyTracker(Document):
                         "serials": []
                     }
                 
-                # Count only unique serial numbers
+                # Count unique serial numbers
                 if detail.serial_no not in serial_items[item_code]["serials"]:
                     serial_items[item_code]["serials"].append(detail.serial_no)
                     serial_items[item_code]["serial_count"] += 1
         
-        # Get all items from POS Closing Entry
-        invoice_items = {}
+        # Fetch items from POS Closing Entry
         closing_entries = frappe.get_all(
             "POS Closing Entry",
             filters={"pos_opening_entry": self.pos_opening_entry},
@@ -56,17 +59,17 @@ class ItemDailyTracker(Document):
         )
         
         for closing in closing_entries:
-            # Get all invoices in this closing entry
+            # Fetch invoices from POS Invoice Reference
             invoices = frappe.get_all(
-                "POS Invoice Reference",  # Assuming this is the child table in POS Closing Entry
+                "POS Invoice Reference",
                 filters={"parent": closing.name},
                 fields=["pos_invoice"]
             )
             
             for inv in invoices:
-                # Get items from each invoice
+                # Fetch items from each invoice
                 items = frappe.get_all(
-                    "POS Invoice Item",  # Assuming this is the child table in POS Invoice
+                    "POS Invoice Item",
                     filters={"parent": inv.pos_invoice},
                     fields=["item_code", "item_name", "qty"]
                 )
@@ -81,7 +84,7 @@ class ItemDailyTracker(Document):
                     
                     invoice_items[item_code]["invoice_count"] += item.qty
         
-        # Combine data and populate the child table
+        # Combine data and populate the items child table
         all_item_codes = set(list(serial_items.keys()) + list(invoice_items.keys()))
         
         for item_code in all_item_codes:
@@ -92,7 +95,7 @@ class ItemDailyTracker(Document):
             # Calculate difference
             difference = serial_count - invoice_count
             
-            # Add to child table
+            # Append to items child table
             self.append("items", {
                 "item_code": item_code,
                 "item_name": item_name,
