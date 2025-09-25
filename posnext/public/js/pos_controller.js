@@ -37,12 +37,41 @@ posnext.PointOfSale.Controller = class {
 	}
 
 	check_opening_entry(value = "") {
-		this.fetch_opening_entry(value).then((r) => {
-			if (r.message.length) {
-				// assuming only one opening voucher is available for the current user
-				this.prepare_app_defaults(r.message[0]);
-			} else {
-				this.create_opening_voucher();
+		if (frappe.user_roles.includes("Sales Person")) {
+			this.find_available_opening_entry();
+		} else {
+			this.fetch_opening_entry(value).then((r) => {
+				if (r.message.length) {
+					// assuming only one opening voucher is available for the current user
+					this.prepare_app_defaults(r.message[0]);
+				} else {
+					this.create_opening_voucher();
+				}
+			});
+		}
+	}
+
+	find_available_opening_entry() {
+		const me = this;
+		
+		frappe.call({
+			method: "posnext.posnext.page.posnext.point_of_sale.get_available_opening_entry",
+			callback: (r) => {
+				if (r.message && r.message.length > 0) {
+					
+					me.prepare_app_defaults(r.message[0]);
+					 frappe.show_alert({
+						message: __("Using existing POS Opening Entry: {0}", [r.message[0].name]),
+						indicator: 'blue'
+					});
+				} else {
+					
+					frappe.msgprint({
+						title: __('No POS Opening Entry Available'),
+						message: __('No POS Opening Entry is currently available. Please contact your manager to create one.'),
+						indicator: 'red'
+					});
+				}
 			}
 		});
 	}

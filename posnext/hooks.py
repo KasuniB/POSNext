@@ -40,7 +40,8 @@ app_include_js = [
 
 # include js in doctype views
 doctype_js = {"POS Profile" : "public/js/pos_profile.js",
-"Sales Invoice" : "public/js/sales_invoice.js"}
+"Sales Invoice" : "public/js/sales_invoice.js",
+"POS Closing Entry" : "public/js/pos_closing_entry.js"}
 
 doctype_list_js = {"Item" : "public/js/item_list.js"}
 # doctype_tree_js = {"doctype" : "public/js/doctype_tree.js"}
@@ -149,7 +150,11 @@ doc_events = {
 	},
 	"POS Profile": {
 		"validate": "posnext.doc_events.pos_profile.validate_pf"
-	}
+	},
+    "Payment Entry": {
+        "on_submit": "posnext.customizations.payment_entry.update_banked_amount",
+        "on_cancel": "posnext.customizations.payment_entry.update_banked_amount",
+    }
 }
 
 # Scheduled Tasks

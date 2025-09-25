@@ -1,0 +1,106 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "creation": "2024-11-05 03:44:35.728684",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "posting_date",
+  "posting_time",
+  "column_break_3",
+  "closed_pos_closing_entries",
+  "payment_summary",
+  "column_break_6",
+  "total_amount",
+  "banked_amount",
+  "unbanked_amount",
+  "payment_summary_data"
+ ],
+ "fields": [
+  {
+   "fieldname": "posting_date",
+   "fieldtype": "Date",
+   "in_list_view": 1,
+   "label": "Posting Date",
+   "reqd": 1
+  },
+  {
+   "fieldname": "posting_time",
+   "fieldtype": "Time",
+   "label": "Posting Time",
+   "reqd": 1
+  },
+  {
+   "fieldname": "column_break_3",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "closed_pos_closing_entries",
+   "fieldtype": "Table",
+   "label": "Closed POS Closing Entries",
+   "options": "Closed POS Closing Entry Details",
+   "read_only": 1
+  },
+  {
+   "fieldname": "payment_summary",
+   "fieldtype": "HTML",
+   "label": "Payment Summary"
+  },
+  {
+   "fieldname": "column_break_6",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "total_amount",
+   "fieldtype": "Currency",
+   "label": "Total Amount",
+   "options": "company:company_currency",
+   "read_only": 1
+  },
+  {
+   "fieldname": "banked_amount",
+   "fieldtype": "Currency",
+   "label": "Banked Amount",
+   "options": "company:company_currency"
+  },
+  {
+   "fieldname": "unbanked_amount",
+   "fieldtype": "Currency",
+   "label": "Unbanked Amount",
+   "options": "company:company_currency",
+   "read_only": 1
+  },
+  {
+   "fieldname": "payment_summary_data",
+   "fieldtype": "Text",
+   "hidden": 1,
+   "label": "Payment Summary Data"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "is_submittable": 1,
+ "links": [],
+ "modified": "2024-11-05 03:44:35.728684",
+ "modified_by": "Administrator",
+ "module": "Posnext",
+ "name": "Chief Cashier Closing Entry",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}

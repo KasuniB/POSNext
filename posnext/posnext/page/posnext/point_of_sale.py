@@ -487,3 +487,23 @@ def get_uoms(item_code):
 @frappe.whitelist()
 def get_barcodes(item_code):
 	return frappe.db.get_all("Item Barcode", filters={"parent": item_code}, fields=["barcode"])
+
+@frappe.whitelist()
+def get_available_opening_entry():
+	"""
+	Get any available POS Opening Entry for waiters to use
+	Returns the most recent opening entry that hasn't been closed
+	"""
+	# Get all open POS Opening Entries (not closed)
+	open_vouchers = frappe.db.get_all(
+		"POS Opening Entry",
+		filters={
+			"pos_closing_entry": ["in", ["", None]], 
+			"docstatus": 1
+		},
+		fields=["name", "company", "pos_profile", "period_start_date", "user"],
+		order_by="period_start_date desc",
+		limit=1  # Get the most recent one
+	)
+	
+	return open_vouchers
