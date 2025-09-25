@@ -2,6 +2,8 @@
 
   "devDependencies": {},
   "dependencies": {
-    "onscan.js": "^1.5.2"
+    "onscan.js": "^1.5.2",
+    "qz-tray": "^2.2.2",
+    "jsrsasign": "^10.8.6"
   }
 }

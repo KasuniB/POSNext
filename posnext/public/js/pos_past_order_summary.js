@@ -1,3 +1,4 @@
+import qz from "qz-tray";
 frappe.provide('posnext.PointOfSale');
 posnext.PointOfSale.PastOrderSummary = class {
 	constructor({ wrapper, pos_profile,events }) {
@@ -6,6 +7,8 @@ posnext.PointOfSale.PastOrderSummary = class {
 		this.events = events;
 
 		this.init_component();
+		this.qz_host = this.pos_profile.qz_host || 'localhost'; // Add QZ host from POS profile
+		this.qz_connected = false;
 	}
 
 	init_component() {
@@ -13,6 +16,42 @@ posnext.PointOfSale.PastOrderSummary = class {
 		this.init_email_print_dialog();
 		this.bind_events();
 		this.attach_shortcuts();
+		this.checkQzDependencies();
+	}
+
+	checkQzDependencies() {
+		// Check if required libraries are loaded
+		const missingLibs = [];
+		if (typeof qz === 'undefined') missingLibs.push('qz-tray');
+		if (typeof KEYUTIL === 'undefined') missingLibs.push('jsrsasign');
+
+		if (missingLibs.length > 0) {
+			console.warn('QZ Printing dependencies missing:', missingLibs.join(', '));
+			console.warn('Please ensure qz-tray and jsrsasign libraries are loaded for thermal printing.');
+		} else {
+			// Try to detect QZ Tray installation
+			this.detectQzInstallation();
+		}
+	}
+
+	async detectQzInstallation() {
+		try {
+			// Try to connect to QZ Tray without certificate first
+			if (!qz.websocket.isActive()) {
+				await qz.websocket.connect({
+					host: this.qz_host,
+					usingSecure: false
+				});
+				this.qz_connected = true;
+				console.log('QZ Tray detected and connected successfully');
+				return true;
+			}
+			return true;
+		} catch (error) {
+			console.warn('QZ Tray not detected or connection failed:', error);
+			this.qz_connected = false;
+			return false;
+		}
 	}
 
 	prepare_dom() {
@@ -265,6 +304,34 @@ posnext.PointOfSale.PastOrderSummary = class {
     }
 
 	print_receipt() {
+		// Check if QZ printing is enabled in POS profile
+		if (this.pos_profile.enable_qz_printing) {
+			this.printReceiptWithQz()
+				.then(() => {
+					frappe.show_alert({
+						message: __('Receipt printed successfully'),
+						indicator: 'green'
+					});
+				})
+				.catch((error) => {
+					console.error('QZ Print Error:', error);
+					if (error.custom) {
+						frappe.msgprint({
+							title: error.title,
+							message: error.message,
+							indicator: 'red'
+						});
+					} else {
+						// Fallback to regular printing
+						this.printReceiptRegular();
+					}
+				});
+		} else {
+			this.printReceiptRegular();
+		}
+	}
+
+	printReceiptRegular() {
 		const frm = this.events.get_frm();
 		frappe.utils.print(
 			this.doc.doctype,
@@ -273,6 +340,209 @@ posnext.PointOfSale.PastOrderSummary = class {
 			this.doc.letter_head,
 			this.doc.language || frappe.boot.lang
 		);
+	}
+
+	// QZ Tray Printing Functions
+	loadQzPrinter(host) {
+		return new Promise((resolve, reject) => {
+			if (typeof qz === 'undefined') {
+				reject({
+					custom: true,
+					title: "QZ Tray not loaded",
+					message: "QZ Tray library is not available. Please ensure QZ Tray is installed and running."
+				});
+				return;
+			}
+
+			// First try to connect without certificate
+			if (!qz.websocket.isActive()) {
+				qz.websocket.connect({
+					host,
+					usingSecure: false
+				})
+				.then(() => {
+					this.qz_connected = true;
+					resolve("success");
+				})
+				.catch((err) => {
+					// If connection fails, try with certificate setup
+					console.log('Initial connection failed, trying with certificate...');
+					this.setupQzCertificate(host)
+						.then(() => resolve("success"))
+						.catch((certError) => reject(certError));
+				});
+			} else {
+				resolve("already connected");
+			}
+		});
+	}
+
+	setupQzCertificate(host) {
+		return new Promise((resolve, reject) => {
+			// Try to use QZ's built-in certificate first
+			qz.security.setCertificatePromise((resolveCert) => {
+				// Try to get certificate from various sources
+				const certSources = [
+					this.pos_profile.qz_certificate_path,
+					"/assets/posnext/files/cert.pem",
+					"/files/cert.pem"
+				];
+
+				const tryNextCert = (index) => {
+					if (index >= certSources.length) {
+						// If no certificate found, use QZ's demo certificate (less secure)
+						console.warn('No certificate found, using QZ demo mode');
+						resolveCert(null); // This will use QZ's built-in certificate
+						return;
+					}
+
+					const certPath = certSources[index];
+					if (!certPath) {
+						tryNextCert(index + 1);
+						return;
+					}
+
+					frappe.call({
+						method: "frappe.client.get_value",
+						args: {
+							doctype: "File",
+							filters: { file_url: certPath },
+							fieldname: "content"
+						},
+						callback: (r) => {
+							if (r.message && r.message.content) {
+								resolveCert(r.message.content);
+							} else {
+								// Try direct fetch
+								fetch(certPath)
+									.then(response => response.text())
+									.then(cert => resolveCert(cert))
+									.catch(() => tryNextCert(index + 1));
+							}
+						}
+					});
+				};
+
+				tryNextCert(0);
+			});
+
+			// Now try to connect with certificate
+			qz.websocket.connect({
+				host,
+				usingSecure: false
+			})
+			.then(() => {
+				this.qz_connected = true;
+				resolve("success");
+			})
+			.catch((err) => {
+				reject({
+					custom: true,
+					title: "QZ Connection Failed",
+					message: `Could not connect to QZ Tray: ${String(err)}. Please ensure QZ Tray is installed and running.`
+				});
+			});
+		});
+	}
+
+	printWithQz(host, htmlToPrint) {
+		return new Promise((resolve, reject) => {
+			if (typeof qz === 'undefined') {
+				reject({
+					custom: true,
+					title: "QZ Tray not available",
+					message: "QZ Tray library is not loaded."
+				});
+				return;
+			}
+
+			// Set signature algorithm
+			qz.security.setSignatureAlgorithm("SHA512");
+
+			// Set signature promise - try to use private key if available
+			qz.security.setSignaturePromise((toSign) => {
+				return new Promise((resolveSig) => {
+					try {
+						const privateKey = this.pos_profile.qz_private_key;
+						if (privateKey) {
+							const pk = KEYUTIL.getKey(privateKey);
+							const sig = new KJUR.crypto.Signature({ "alg": "SHA512withRSA" });
+							sig.init(pk);
+							sig.updateString(toSign);
+							const hex = sig.sign();
+							resolveSig(stob64(hextorstr(hex)));
+						} else {
+							// If no private key, QZ will use its built-in signing
+							console.warn('No private key configured, using QZ built-in signing');
+							resolveSig(null);
+						}
+					} catch (err) {
+						console.warn('Signature generation failed, using QZ built-in:', err);
+						resolveSig(null);
+					}
+				});
+			});
+
+			const printing = () => {
+				qz.printers.getDefault()
+					.then(async (printer) => {
+						const data = [{
+							type: "html",
+							format: "plain",
+							data: htmlToPrint
+						}];
+						const config = qz.configs.create(printer);
+						try {
+							await qz.print(config, data);
+							resolve("printed");
+						} catch (e) {
+							this.disconnectQzPrinter();
+							reject({
+								custom: true,
+								title: "Print failed",
+								message: String(e)
+							});
+						}
+					})
+					.catch((err) => {
+						this.disconnectQzPrinter();
+						reject({
+							custom: true,
+							title: "Error looking up for printer",
+							message: String(err)
+						});
+					});
+			};
+
+			if (qz.websocket.isActive()) {
+				printing();
+			} else {
+				this.loadQzPrinter(host)
+					.then(() => printing())
+					.catch((err) => reject(err));
+			}
+		});
+	}
+
+	printReceiptWithQz() {
+		// Get HTML content for printing
+		const frm = this.events.get_frm();
+		const printFormat = frm.pos_print_format || this.pos_profile.print_format;
+
+		return frappe.call({
+			method: "frappe.www.printview.get_html_and_style",
+			args: {
+				doc: this.doc,
+				print_format: printFormat,
+				letter_head: this.doc.letter_head,
+				_lang: this.doc.language || frappe.boot.lang
+			}
+		}).then(r => {
+			if (r.message) {
+				const htmlContent = r.message.html;
+				return this.printWithQz(this.qz_host, htmlContent);
+			}
+		});
 	}
 
 	attach_shortcuts() {
@@ -473,6 +743,10 @@ posnext.PointOfSale.PastOrderSummary = class {
 	toggle_component(show) {
 		show ? this.$component.css('display', 'flex') : this.$component.css('display', 'none');
 
+		// Disconnect QZ when hiding component
+		if (!show) {
+			this.disconnectQzPrinter();
+		}
 	}
 
 	async print_receipt_on_order_complete() {
