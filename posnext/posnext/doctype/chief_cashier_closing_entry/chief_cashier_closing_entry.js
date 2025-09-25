@@ -12,8 +12,36 @@ frappe.ui.form.on('Chief Cashier Closing Entry', {
                     frappe.msgprint("Please select a Posting Date first.");
                     return;
                 }
-                frm.set_value("posting_time", frappe.datetime.now_time());
-                fetch_closing_entries_and_summary(frm);
+
+                // First, check if there are POS Closing Entries
+                const r = await frappe.call({
+                    method: "posnext.posnext.doctype.chief_cashier_closing_entry.chief_cashier_closing_entry.get_open_pos_closings",
+                    args: {
+                        posting_date: frm.doc.posting_date
+                    }
+                });
+
+                if (r.message && r.message.length > 0) {
+                    // Save if new
+                    if (frm.is_new()) {
+                        await frm.save();
+                    }
+
+                    frm.set_value("posting_time", frappe.datetime.now_time());
+
+                    // Populate child table
+                    frm.clear_table("closed_pos_closing_entries");
+                    r.message.forEach(entry => {
+                        const row = frm.add_child("closed_pos_closing_entries");
+                        row.pce_id = entry.name;
+                    });
+                    frm.refresh_field("closed_pos_closing_entries");
+
+                    // Fetch payment summary
+                    fetch_payment_summary(frm);
+                } else {
+                    frappe.msgprint("No open POS Closing Entries found for the selected posting date.");
+                }
             });
         }
 
@@ -29,7 +57,7 @@ frappe.ui.form.on('Chief Cashier Closing Entry', {
         }
 
         // Update latest banked/unbanked amount
-        if (frm.doc.name) {
+        if (!frm.is_new() && frm.doc.docstatus === 1) {
             update_banked_and_unbanked(frm);
         }
     },
@@ -45,7 +73,6 @@ frappe.ui.form.on('Chief Cashier Closing Entry', {
 
         if (frm.doc.posting_date) {
             frm.set_value("posting_time", frappe.datetime.now_time());
-            fetch_closing_entries_and_summary(frm);
         } else {
             frm.set_value("total_amount", 0);
             frm.set_value("banked_amount", 0);
@@ -68,28 +95,7 @@ frappe.ui.form.on('Chief Cashier Closing Entry', {
     }
 });
 
-async function fetch_closing_entries_and_summary(frm) {
-    // Fetch POS Closing Entries
-    await frappe.call({
-        method: "posnext.posnext.doctype.chief_cashier_closing_entry.chief_cashier_closing_entry.get_open_pos_closings",
-        args: {
-            posting_date: frm.doc.posting_date
-        },
-        callback: function (r) {
-            if (r.message && r.message.length > 0) {
-                frm.clear_table("closed_pos_closing_entries");
-                r.message.forEach(entry => {
-                    const row = frm.add_child("closed_pos_closing_entries");
-                    row.pce_id = entry.name;
-                });
-                frm.refresh_field("closed_pos_closing_entries");
-            } else {
-                frappe.msgprint("No open POS Closing Entries found for the selected posting date.");
-            }
-        }
-    });
-
-    // Fetch and render payment summary
+async function fetch_payment_summary(frm) {
     frappe.call({
         method: "posnext.posnext.doctype.chief_cashier_closing_entry.chief_cashier_closing_entry.get_payment_summary",
         args: {
@@ -137,10 +143,8 @@ async function fetch_closing_entries_and_summary(frm) {
                 html += `<td style="text-align: right;">${format_currency(grand_total)}</td></tr>`;
                 html += `</tbody></table>`;
 
-                // Update UI always
                 frm.fields_dict.payment_summary.$wrapper.html(html);
 
-                // Update DB only if values changed
                 const new_values = {
                     payment_summary_data: html,
                     total_amount: grand_total,
@@ -163,7 +167,7 @@ async function fetch_closing_entries_and_summary(frm) {
                             fieldname: changes
                         },
                         callback: function () {
-                            frm.reload_doc(); // 🔁 Clean refresh
+                            frm.reload_doc();
                         }
                     });
                 }
@@ -179,7 +183,7 @@ async function fetch_closing_entries_and_summary(frm) {
                 const changes = {};
                 for (let key in reset_values) {
                     if (frm.doc[key] !== reset_values[key]) {
-                        changes[key] = new_values[key];
+                        changes[key] = reset_values[key];
                     }
                 }
 
@@ -192,7 +196,7 @@ async function fetch_closing_entries_and_summary(frm) {
                             fieldname: changes
                         },
                         callback: function () {
-                            frm.reload_doc(); // 🔁 Prevents dirty warning
+                            frm.reload_doc();
                         }
                     });
                 }
@@ -231,7 +235,7 @@ async function update_banked_and_unbanked(frm) {
                     fieldname: changes
                 },
                 callback: function () {
-                    frm.reload_doc(); // 🔁 Clean refresh
+                    frm.reload_doc();
                 }
             });
         }
