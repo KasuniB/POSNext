@@ -2,6 +2,9 @@ import frappe
 from frappe.utils import getdate
 from collections import defaultdict
 
+class POSClosingInvoiceReference(Document):
+    pass
+
 @frappe.whitelist()
 def get_payment_summary(posting_date):
     posting_date = getdate(posting_date)
