@@ -1,6 +1,7 @@
 import frappe
 from frappe.utils import getdate
 from collections import defaultdict
+from frappe.model.document import Document
 
 class POSClosingInvoiceReference(Document):
     pass
